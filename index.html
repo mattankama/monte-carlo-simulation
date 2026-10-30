@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monte Carlo Investment Simulation</title>
+  <meta name="description" content="Project the future value of a brokerage account from its invested and uninvested principal.">
+  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Hanken+Grotesk:wght@400&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+    <header class="masthead">
+      <h1>Monte Carlo investment simulation</h1>
+      <p class="lede">Project your account's value from what's invested and what's held in cash.</p>
+    </header>
+
+    <main class="app">
+      <form class="controls" id="controls" novalidate autocomplete="off">
+        <section class="group" aria-labelledby="investedTitle">
+          <div class="group-head">
+            <span class="swatch swatch--invested" aria-hidden="true"></span>
+            <h2 class="group-title" id="investedTitle">Invested</h2>
+          </div>
+          <p class="group-note">Stocks, funds and other holdings</p>
+          <div class="field-row">
+            <div class="field">
+              <label for="p1">Principal</label>
+              <div class="input-shell">
+                <span class="affix" aria-hidden="true">$</span>
+                <input id="p1" type="text" inputmode="decimal" enterkeyhint="done" spellcheck="false" value="10,000" data-kind="money" aria-describedby="p1-hint">
+              </div>
+              <p class="hint" id="p1-hint"></p>
+            </div>
+            <div class="field field--rate">
+              <label for="r1">Annual return</label>
+              <div class="input-shell">
+                <input id="r1" type="text" inputmode="decimal" enterkeyhint="done" spellcheck="false" value="7" data-kind="rate" aria-describedby="r1-hint">
+                <span class="affix" aria-hidden="true">%</span>
+              </div>
+              <p class="hint" id="r1-hint"></p>
+            </div>
+          </div>
+        </section>
+
+        <section class="group" aria-labelledby="cashTitle">
+          <div class="group-head">
+            <span class="swatch swatch--cash" aria-hidden="true"></span>
+            <h2 class="group-title" id="cashTitle">Not invested</h2>
+          </div>
+          <p class="group-note">Cash held in the account</p>
+          <div class="field-row">
+            <div class="field">
+              <label for="p2">Principal</label>
+              <div class="input-shell">
+                <span class="affix" aria-hidden="true">$</span>
+                <input id="p2" type="text" inputmode="decimal" enterkeyhint="done" spellcheck="false" value="5,000" data-kind="money" aria-describedby="p2-hint">
+              </div>
+              <p class="hint" id="p2-hint"></p>
+            </div>
+            <div class="field field--rate">
+              <label for="r2">Annual growth</label>
+              <div class="input-shell">
+                <input id="r2" type="text" inputmode="decimal" enterkeyhint="done" spellcheck="false" value="4" data-kind="rate" aria-describedby="r2-hint">
+                <span class="affix" aria-hidden="true">%</span>
+              </div>
+              <p class="hint" id="r2-hint"></p>
+            </div>
+          </div>
+        </section>
+
+        <section class="group group--toggle group--income" aria-labelledby="incomeTitle">
+          <div class="group-head group-head--switch">
+            <h2 class="group-title" id="incomeTitle">Yearly income</h2>
+            <button class="switch" id="incomeSwitch" type="button" role="switch" aria-checked="false" aria-labelledby="incomeTitle" aria-describedby="incomeNote" aria-controls="incomeBody"></button>
+          </div>
+          <p class="group-note" id="incomeNote">Divided evenly across the months of each year</p>
+          <div class="fold" id="incomeBody" inert>
+            <div class="fold-clip">
+              <div class="fold-fields fold-fields--pair">
+                <div class="field">
+                  <label for="c">Amount per year</label>
+                  <div class="input-shell">
+                    <span class="affix" aria-hidden="true">$</span>
+                    <input id="c" type="text" inputmode="decimal" enterkeyhint="done" spellcheck="false" value="6,000" data-kind="money" aria-describedby="c-hint">
+                  </div>
+                  <p class="hint" id="c-hint"></p>
+                </div>
+                <div class="field">
+                  <label for="split">Split</label>
+                  <input class="range range--split" id="split" type="range" min="0" max="100" step="5" value="80" aria-valuetext="80% invested, 20% not invested">
+                  <div class="split-legend" aria-hidden="true">
+                    <span class="split-side"><span class="swatch swatch--invested"></span><span>Invested <span class="split-pct" id="splitInvPct">80%</span></span></span>
+                    <span class="split-side"><span class="swatch swatch--cash"></span><span>Not invested <span class="split-pct" id="splitCashPct">20%</span></span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="horizon">
+          <div class="horizon-head">
+            <label class="horizon-title" for="years">Time</label>
+            <output class="horizon-value" id="yearsOut" for="years">10 years</output>
+          </div>
+          <input class="range" id="years" type="range" min="1" max="80" step="1" value="10" aria-valuetext="10 years">
+          <div class="ruler" aria-hidden="true">
+            <div class="ruler-ticks" id="rulerTicks"></div>
+            <div class="ruler-labels" id="rulerLabels"></div>
+          </div>
+        </section>
+
+        <section class="group group--toggle group--sim" aria-labelledby="simTitle">
+          <div class="group-head group-head--switch">
+            <h2 class="group-title" id="simTitle">Range of outcomes</h2>
+            <button class="switch" id="simSwitch" type="button" role="switch" aria-checked="false" aria-labelledby="simTitle" aria-describedby="simNote" aria-controls="simBody"></button>
+          </div>
+          <p class="group-note" id="simNote">Simulate 2,000 possible futures with good and bad years</p>
+          <div class="fold" id="simBody" inert>
+            <div class="fold-clip">
+              <div class="fold-fields">
+                <div class="field-row">
+                  <div class="field">
+                    <label for="swingPreset">Swings like</label>
+                    <div class="input-shell input-shell--select">
+                      <select id="swingPreset"></select>
+                    </div>
+                  </div>
+                  <div class="field field--rate">
+                    <label for="swings">Yearly swings</label>
+                    <div class="input-shell">
+                      <input id="swings" type="text" inputmode="decimal" enterkeyhint="done" spellcheck="false" value="19" data-kind="swing" aria-describedby="swings-hint">
+                      <span class="affix" aria-hidden="true">%</span>
+                    </div>
+                    <p class="hint" id="swings-hint"></p>
+                  </div>
+                </div>
+                <div class="fold-foot">
+                  <p class="fold-note">Your annual return now means the typical outcome.</p>
+                  <button class="text-button" id="reshuffle" type="button">Reshuffle</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="group group--toggle group--real" aria-labelledby="realTitle">
+          <div class="group-head group-head--switch">
+            <h2 class="group-title" id="realTitle">Inflation</h2>
+            <button class="switch" id="realSwitch" type="button" role="switch" aria-checked="false" aria-labelledby="realTitle" aria-describedby="realNote" aria-controls="realBody"></button>
+          </div>
+          <p class="group-note" id="realNote">Show future amounts in today's dollars</p>
+          <div class="fold" id="realBody" inert>
+            <div class="fold-clip">
+              <div class="fold-fields">
+                <div class="field-row">
+                  <div class="field">
+                    <label for="inflPreset">Estimate</label>
+                    <div class="input-shell input-shell--select">
+                      <select id="inflPreset"></select>
+                    </div>
+                  </div>
+                  <div class="field field--rate">
+                    <label for="infl">Per year</label>
+                    <div class="input-shell">
+                      <input id="infl" type="text" inputmode="decimal" enterkeyhint="done" spellcheck="false" value="2.5" data-kind="inflation" aria-describedby="infl-hint">
+                      <span class="affix" aria-hidden="true">%</span>
+                    </div>
+                    <p class="hint" id="infl-hint"></p>
+                  </div>
+                </div>
+                <p class="fold-note" id="inflNote"></p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </form>
+
+      <section class="results" aria-labelledby="resultLabel">
+        <div class="summary">
+          <p class="headline-label" id="resultLabel"><span id="resultKind">Projected value</span> in <span id="yearsText">10 years</span><span class="headline-real" id="resultReal" hidden>In today's dollars</span></p>
+          <p class="figure">
+            <span class="sr-only" id="figureSr">$27,072.73</span>
+            <span class="figure-vis" aria-hidden="true"><span class="figure-cur">$</span><span class="figure-int" id="figureInt">15,000</span><span class="figure-dec" id="figureDec">.00</span></span>
+          </p>
+          <p class="spread" id="spread" hidden>8 in 10 simulations end between <span class="spread-nums"><strong id="spreadLo"></strong> and <strong id="spreadHi"></strong></span></p>
+          <p class="delta" id="delta"><span class="delta-amount" id="deltaAmount"></span> <span class="delta-rest"><span id="deltaFrom"></span> <span class="delta-added" id="deltaAdded"></span></span></p>
+          <p class="risk" id="risk" hidden></p>
+        </div>
+
+        <figure class="chart" id="chart" tabindex="0" aria-label="Account growth chart" aria-describedby="chartHelp">
+          <svg class="chart-svg" id="chartSvg" role="img" aria-label="Account growth chart"></svg>
+          <div class="tip" id="tip" aria-hidden="true" hidden>
+            <div class="tip-head">
+              <span class="tip-year" data-tip="year"></span>
+              <span class="tip-rel" data-tip="rel"></span>
+            </div>
+            <div class="tip-grid">
+              <span class="tip-key tip-key--band" data-fan></span><span class="tip-val" data-tip="hi" data-fan></span><span class="tip-lab" data-fan>Top 10%</span>
+              <span class="tip-key tip-key--line"></span><span class="tip-val tip-val--main" data-tip="mid"></span><span class="tip-lab" data-tip="midLabel">Total</span>
+              <span class="tip-key tip-key--band" data-fan></span><span class="tip-val" data-tip="lo" data-fan></span><span class="tip-lab" data-fan>Bottom 10%</span>
+            </div>
+            <p class="tip-note" data-tip="real" hidden>In today's dollars</p>
+          </div>
+        </figure>
+        <ul class="fan-key" id="fanKey" hidden>
+          <li><span class="key key--line" aria-hidden="true"></span>Typical</li>
+          <li><span class="key key--inner" aria-hidden="true"></span>Middle half of simulations</li>
+          <li><span class="key key--outer" aria-hidden="true"></span>8 in 10 simulations</li>
+        </ul>
+        <p class="sr-only" id="chartHelp">Use the left and right arrow keys to read the values for each year.</p>
+        <p class="sr-only" id="chartLive" aria-live="polite"></p>
+
+        <details class="breakdown">
+          <summary>Yearly breakdown</summary>
+          <div class="table-wrap">
+            <table class="table">
+              <caption class="table-note" id="tableNote" hidden>In today's dollars</caption>
+              <thead>
+                <tr id="tableHead"></tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+    </main>
+
+    <footer class="fineprint">
+      <p>
+        <span id="fineFixed">Assumes each rate is a steady yearly growth rate.</span>
+        <span id="fineSim" hidden>Simulated outcomes, not a forecast: <span id="fineSimDetail"></span></span>
+        <span id="fineIncome" hidden>Yearly income is divided evenly across the 12 months and added at the end of each month, then grows at the rate of the section it goes to.</span>
+        <span id="fineReal" hidden></span>
+      </p>
+    </footer>
+  </div>
+
+  <p class="sr-only" id="summaryLive" aria-live="polite"></p>
+  <script src="montecarlo.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

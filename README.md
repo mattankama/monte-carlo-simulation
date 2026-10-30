@@ -1,4 +1,4 @@
-# Monte Carlo Investment Simulation
+# Monte Carlo Simulation
 
 Projects what a brokerage account could grow to from what's invested and what's held in
 cash. It can add yearly income, show amounts in today's dollars, and simulate 2,000
